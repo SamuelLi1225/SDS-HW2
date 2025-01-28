@@ -1,0 +1,225 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
+Samuel Li
+scl2567
+
+
+
+#Problem 1.
+
+```{r echo=FALSE}
+library(ggplot2)
+
+#A
+profs <- read.csv("profs.csv")
+ggplot(profs, aes(x = eval)) +
+  geom_histogram(binwidth = 0.2, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of Course Evaluation Scores",x = "Evaluation Score",y = "Frequency") +
+  theme_minimal()
+```
+In this plot, it is skewed to the left, with a mean and median at around 4
+
+```{r echo=FALSE}
+
+#B
+ggplot(profs, aes(x = native, y = eval, fill = native)) +
+  geom_boxplot() +
+  labs(title = "Course Evaluation Scores by Native English Speaker Status", x = "Native English Speaker", y = "Evaluation Score") +
+  theme_minimal()
+
+```
+In this plot, the non native speaker scores are on average lower than the native speakers.
+
+
+
+
+```{r echo=FALSE}
+
+
+
+
+
+#C
+ggplot(profs, aes(x = eval)) +
+  geom_histogram(binwidth = 0.5, fill = "skyblue", color = "black") +
+  facet_grid(rows = vars(gender)) +  # Creates separate plots for male and female
+  labs(title = "Distribution of Course Evaluation Scores by Gender", x = "Evaluation Score", y = "Frequency") +
+  theme_minimal()
+```
+This plot reveals that the male scores are slightly on average higher than the female ones. 
+
+```{r echo=FALSE}
+
+
+
+
+
+
+
+#D
+ggplot(profs, aes(x = beauty, y = eval)) +
+  geom_point(color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  
+  labs(title = "Relationship Between Physical Attractiveness and Course Evaluations", x = "Physical Attractiveness Score", y = "Evaluation Score") +
+  theme_minimal()
+```
+There is a positive weak correlation between physical attractiveness and evaluation score. 
+
+
+
+
+#Problem 2.
+```{r echo=FALSE}
+#A
+library(ggplot2)
+library(dplyr)
+
+bikeshare <- read.csv("bikeshare.csv")
+
+bikeshare$average_rentals <- ave(bikeshare$total, bikeshare$hr, FUN = mean)
+
+ggplot(bikeshare, aes(x = hr, y = average_rentals)) +
+  geom_line() + labs(x = "Hour of the Day", y = "Average Number of Bike Rentals", title = "Average Number of Bike Rentals per Hour of the Day")
+```
+
+```{r echo=FALSE}
+#B
+library(ggplot2)
+library(dplyr)
+
+bikeshare <- read.csv("bikeshare.csv")
+
+bikeshare$avg_rentals <- ave(bikeshare$total, bikeshare$hr, bikeshare$workingday, FUN = mean)
+
+# Create the line plot with facets for working vs. non-working days
+ggplot(bikeshare, aes(x = hr, y = avg_rentals)) +
+  geom_line() +
+  labs(x = "Hour of the Day", y = "Average Number of Bike Rentals", title = "Average Number of Bike Rentals per Hour of the Day") +
+  facet_wrap(~workingday)
+```
+These plots show the average number of bike rentals per Hour of the day based on whether it is a working day or not. As seen, working days tend to see a spike on the start and end hours of the usual working day shift(9-5). However, when it is not a working day, the rentals seem to be higher in the afternoon. 
+
+```{r echo=FALSE}
+#C
+library(ggplot2)
+library(dplyr)
+
+bikeshare <- read.csv("bikeshare.csv")
+
+bike_9am <- subset(bikeshare, hr == 9)
+
+bike_9am_summary <- aggregate(total ~ weathersit + workingday, data = bike_9am, FUN = mean)
+
+colnames(bike_9am_summary)[3] <- "avg_ridership"
+
+ggplot(bike_9am_summary, aes(x = factor(weathersit), y = avg_ridership)) +
+  geom_col() + labs(x = "Weather Condition", y = "Average Number of Bike Rentals", title = "Average Ridership during the 9AM Hour") +
+  facet_wrap(~workingday)
+```
+This is a faceted bar plot of whether it is a working day or not that displays the average ridership in different weather conditions at 9am.
+
+
+
+
+
+#Problem 3.
+```{r echo=FALSE}
+capmetro_UT <- read.csv("capmetro_UT.csv")
+capmetro_UT = mutate(capmetro_UT, day_of_week = factor(day_of_week, levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")), month = factor(month, levels=c("Sep", "Oct","Nov")))
+```
+
+```{r echo=FALSE}
+#1
+
+capmetro_average_boardings <- capmetro_UT %>%
+  group_by(hour_of_day, day_of_week, month) %>%
+  summarize(avg_boardings = mean(boarding), .groups="keep")
+
+  
+ggplot(capmetro_average_boardings) + geom_line(aes(x=hour_of_day, y = avg_boardings, color = month)) + labs(x="Hour of the Day", y="Average Boardings", title="average boardings by hour of the day, day of week, and month.") + facet_wrap(~day_of_week) 
+```
+
+```{r echo=FALSE}
+#2
+ggplot(capmetro_UT) + geom_point(aes(x = temperature, y = boarding, color = weekend )) + labs(x="Temperature", y="Boardings", title="scatter plot of temperature vs boardings") + facet_wrap(~hour_of_day)
+```
+
+
+
+
+
+
+#Problem 4.
+```{r echo=FALSE}
+#A
+library(dplyr)
+library(ggplot2)
+library(knitr)
+billboard <- read.csv("billboard.csv")
+
+top_songs <- aggregate(weeks_on_chart ~ performer + song, data = billboard, sum, na.rm = TRUE)
+
+top_songs <- top_songs[rank(-top_songs$weeks_on_chart) <= 10, ]
+
+library(knitr)
+kable(top_songs, col.names = c("Performer", "Song", "Total Weeks"), 
+      caption = "Top 10 Most Popular Songs Since 1958")
+
+
+```
+
+
+```{r echo=FALSE}
+#B
+billboard_filtered <- billboard[billboard$year > 1958 & billboard$year < 2021, ]
+
+unique_songs_count <- tapply(billboard_filtered$song, billboard_filtered$year, unique)
+
+unique_songs_count <- sapply(unique_songs_count, length)
+
+unique_songs_per_year <- data.frame(year = as.numeric(names(unique_songs_count)), 
+                                    unique_songs = unique_songs_count)
+
+
+ggplot(unique_songs_per_year, aes(x = year, y = unique_songs)) +
+  geom_line(color = "lightblue") +
+  geom_point(color = "grey") +
+  labs(
+    title = "Musical Diversity of the Billboard Top 100 Over Time",
+    x = "Year",
+    y = "Number of Unique Songs"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+```{r echo=FALSE}
+#C
+ten_week_hits <- billboard[billboard$weeks_on_chart >= 10, ]
+
+ten_week_hits_count <- aggregate(song ~ performer, data = ten_week_hits, FUN = function(x) length(unique(x)))
+
+colnames(ten_week_hits_count) <- c("performer", "ten_week_hits")
+
+top_artists <- ten_week_hits_count[ten_week_hits_count$ten_week_hits >= 30, ]
+
+top_artists <- top_artists[order(top_artists$ten_week_hits, decreasing = TRUE), ]
+
+ggplot(top_artists, aes(x = reorder(performer, ten_week_hits), y = ten_week_hits)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  coord_flip()+
+  labs(
+    title = "Top 19 Artists with At Least 30 Ten-Week Hits in Billboard Top 100",
+    x = "Performer",
+    y = "Number of Ten-Week Hits"
+  ) +
+  theme_minimal()
+
+
+```
